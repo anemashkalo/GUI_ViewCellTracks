@@ -85,15 +85,15 @@ function slider1_Callback(hObject, eventdata, handles)
 xyt = handles.tracks;    
 handles.currT = int32(get(handles.slider1, 'Value'));%
 showfulltrackbutton = get(handles.ShowFullTrack,'String');
-if showfulltrackbutton(1) == 'H' % if the button was not depressed before clicking the slider
-handles.ShowFullTrack_State = handles.ShowFullTrack_State+1;
-set(handles.ShowFullTrack,'String','ShowFullTrack');
-end
+% if showfulltrackbutton(1) == 'H' % if the button was not depressed before clicking the slider
+% handles.ShowFullTrack_State = handles.ShowFullTrack_State+1;
+% set(handles.ShowFullTrack,'String','ShowFullTrack');
+% end
 
 showtrackIDsbutton = get(handles.ShowTrackIDs,'String');
 if showtrackIDsbutton(1) == 'H' % if the button was not depressed before clicking the slider
 handles.ShowTrackIDsState = handles.ShowTrackIDsState+1;
-set(handles.ShowTrackIDs,'String','ShowFullTrack');
+set(handles.ShowTrackIDs,'String','ShowTrackIDs');
 end
 if isempty(handles.tracktoplot)
 hold on;UpdateImage(handles,handles.currT);
@@ -101,9 +101,48 @@ title(['Current time point  ' num2str((double(handles.currT)*handles.delta_t)/60
     'hrs since start; Frame(' num2str(handles.currT) ')']);hold on
 end
 
-if ~isempty(handles.tracktoplot)
+% below part allows the full track to be on, while scrolling, untill the user
+% presses hidefulltracks
+if showfulltrackbutton(1) == 'H' && ~isempty(handles.tracktoplot)% if the button was not depressed before%clicking the slider%%%%%
 toview = size(handles.tracktoplot,2);
-hold on;UpdateImage(handles,handles.currT);
+xyt_curr = struct;
+for jj=1:toview
+   xyt_curr(jj).fulltrack = xyt(handles.tracktoplot(jj)).dat;  
+end
+handles.fulltrack = xyt_curr; 
+handles.currT = int32(get(handles.slider1, 'Value'));
+UpdateImage(handles,handles.currT);hold on
+colormap = handles.colormap;
+for k=1:toview
+ firstT(k)= min(nonzeros(xyt_curr(k).fulltrack(:,3))); 
+ lastT(k) =  max(nonzeros(xyt_curr(k).fulltrack(:,3)));
+if (firstT(k)<=handles.currT) && (handles.currT<=lastT(k)) % if this track has an XY at this time point
+hplot2 = plot(xyt_curr(k).fulltrack(firstT(k)+1:end-1,1),xyt_curr(k).fulltrack(firstT(k)+1:end-1,2)...
+    ,'*','Color',colormap(handles.trackcolor(k),:),'MarkerSize',3,'LineWidth',1);hold on
+plot(xyt_curr(k).fulltrack(firstT(k),1),xyt_curr(k).fulltrack(firstT(k),2)...
+    ,'p','MarkerFaceColor','r','MarkerEdgeColor','w','MarkerSize',6,'LineWidth',1);hold on
+text(xyt_curr(k).fulltrack(firstT(k),1)+8,xyt_curr(k).fulltrack(firstT(k),2)+5,'Start','Color','r','FontSize',8);hold on
+plot(xyt_curr(k).fulltrack(end,1),xyt_curr(k).fulltrack(end,2)...
+    ,'p','MarkerFaceColor','g','MarkerEdgeColor','w','MarkerSize',6,'LineWidth',1);hold on
+text(xyt_curr(k).fulltrack(end,1)+8,xyt_curr(k).fulltrack(end,2)+5,'End','Color','g','FontSize',8);hold on
+% label the current point
+if  handles.currT<=size(xyt_curr(k).fulltrack,1)% not all cells are tracked all the way
+        if xyt_curr(k).fulltrack(handles.currT,1)>0 % tracks that were assigned after first time point, have zeros in the beginning so don't plot them
+            plot(xyt_curr(k).fulltrack(handles.currT,1),xyt_curr(k).fulltrack(handles.currT,2),'p',...
+                'MarkerFaceColor',colormap(handles.trackcolor(k),:),'MarkerEdgeColor','k','Markersize',15);hold on  
+            text(handles.axes1,xyt_curr(k).fulltrack(handles.currT,1)+5,xyt_curr(k).fulltrack(handles.currT,2)+5,...
+                num2str(handles.tracktoplot(k)),'Color',colormap(handles.trackcolor(k),:),'FontSize',12);hold on
+        else
+            disp(['Track ID ' num2str(handles.tracktoplot(k)) 'was picked up in frame' num2str(firstT(k))]);
+        end
+end
+end
+end
+title(['Current time point  ' num2str((double(handles.currT)*handles.delta_t)/60)  ...
+    'hrs since start; Frame(' num2str(handles.currT) ')']);hold on
+else
+toview = size(handles.tracktoplot,2);
+hold on;UpdateImage(handles,handles.currT);%
 xyt_curr = struct;sz_tmp = [];
 for jj=1:toview
    xyt_curr(jj).fulltrack = xyt(handles.tracktoplot(jj)).dat;
@@ -111,7 +150,6 @@ for jj=1:toview
 end
 handles.fulltrack = xyt_curr;
 colormap = handles.colormap;
-%handles.tracktoplot = str2double(get(handles.ReadTrackID, 'String'));
 for k =1:toview
  firstT(k)= min(nonzeros(xyt_curr(k).fulltrack(:,3)));
     if  handles.currT<=size(xyt_curr(k).fulltrack,1)% not all cells are tracked all the way
@@ -123,7 +161,6 @@ for k =1:toview
         else
             disp(['Track ID ' num2str(handles.tracktoplot(k)) 'was picked up in frame' num2str(firstT(k))]);
         end
-
 end
 end
 title(['Current time point  ' num2str((double(handles.currT)*handles.delta_t)/60)  ...
@@ -146,7 +183,6 @@ if ~isempty(handles.matfile) && (handles.show_qFluorData==1)
         end              
     end    
 end
-
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -350,14 +386,16 @@ for jj=1:toview
    xyt_curr(jj).fulltrack = xyt(handles.tracktoplot(jj)).dat;  
 end
 handles.fulltrack = xyt_curr; 
-UpdateImage(handles,1);hold on
+UpdateImage(handles,handles.currT);hold on
 colormap = handles.colormap;
 for k=1:toview
  firstT(k)= min(nonzeros(xyt_curr(k).fulltrack(:,3)));
-if  firstT(k)<=handles.currT % if this track has an XY at this time point
-hplot2 = plot(xyt_curr(k).fulltrack(firstT(k),1),xyt_curr(k).fulltrack(firstT(k),2)...
-    ,'p','MarkerFaceColor',colormap(handles.trackcolor(k),:),'MarkerEdgeColor',colormap(handles.trackcolor(k),:),'MarkerSize',8,'LineWidth',1);hold on
-text(xyt_curr(k).fulltrack(firstT(k),1)+5,xyt_curr(k).fulltrack(firstT(k),2)+5,num2str(handles.tracktoplot(k)),'Color',colormap(handles.trackcolor(k),:),'FontSize',12);hold on
+ lastT(k) =  max(nonzeros(xyt_curr(k).fulltrack(:,3)));
+if  (firstT(k)<=handles.currT) && (handles.currT<=lastT(k))% if this track has an XY at this time point
+    disp('met condition')
+hplot2 = plot(xyt_curr(k).fulltrack(handles.currT,1),xyt_curr(k).fulltrack(handles.currT,2)...
+    ,'p','MarkerFaceColor',colormap(handles.trackcolor(k),:),'MarkerEdgeColor',colormap(handles.trackcolor(k),:),'MarkerSize',5,'LineWidth',1);hold on
+text(xyt_curr(k).fulltrack(handles.currT,1)+5,xyt_curr(k).fulltrack(handles.currT,2)+5,num2str(handles.tracktoplot(k)),'Color',colormap(handles.trackcolor(k),:),'FontSize',12);hold on
 end
 end
 %title(['Frame ' num2str(handles.currT) ]);
@@ -371,11 +409,12 @@ for jj=1:toview
 end
 handles.fulltrack = xyt_curr; 
 handles.currT = int32(get(handles.slider1, 'Value'));
-UpdateImage(handles,1);hold on
+UpdateImage(handles,handles.currT);hold on
 colormap = handles.colormap;
 for k=1:toview
  firstT(k)= min(nonzeros(xyt_curr(k).fulltrack(:,3))); 
-if  ~isempty(handles.currT)% 
+ lastT(k) =  max(nonzeros(xyt_curr(k).fulltrack(:,3)));
+if  (firstT(k)<=handles.currT) && (handles.currT<=lastT(k)) % if this track has an XY at this time point
 hplot2 = plot(xyt_curr(k).fulltrack(firstT(k)+1:end-1,1),xyt_curr(k).fulltrack(firstT(k)+1:end-1,2)...
     ,'*','Color',colormap(handles.trackcolor(k),:),'MarkerSize',3,'LineWidth',1);hold on
 plot(xyt_curr(k).fulltrack(firstT(k),1),xyt_curr(k).fulltrack(firstT(k),2)...
@@ -387,8 +426,8 @@ text(xyt_curr(k).fulltrack(end,1)+8,xyt_curr(k).fulltrack(end,2)+5,'End','Color'
 end
 end
 %tp = min(firstT);
-title('Showing Frame 1');
-set(handles.slider1, 'Value', 1); 
+%title('Showing Frame 1 ');
+%set(handles.slider1, 'Value', 1); 
 end
 guidata(hObject, handles);
 
@@ -410,7 +449,9 @@ end
 if ~isempty(handles.matfile) && (handles.show_qFluorData==1)
     fluor_selectedtracks = struct;
     for jj=1:size(handles.quantifyselected,2)
-    fluor_selectedtracks(jj).dat = handles.quantifyselected(jj).selected.dat;
+    fluor_selectedtracks(jj).fluor = cat(1,handles.quantifyselected(jj).selected.dat.fluor); %handles.quantifyselected(jj).selected.dat
+    fluor_selectedtracks(jj).xy = cat(1,handles.quantifyselected(jj).selected.dat.xy);
+    fluor_selectedtracks(jj).trackID =handles.quantifyselected(jj).selected.dat(1).track;
     end
     save(fname,'goodtracks','fluor_selectedtracks');disp('Saved selected trackIDs and their fluorescence quantification to file');
 else
@@ -759,6 +800,7 @@ if ~isempty(handles.matfile) && (handles.show_qFluorData == 1)
 fluor_selectedtracks(handles.counter).dat=fluor_dat;
 handles.quantifyselected(handles.counter).selected= fluor_selectedtracks(handles.counter);
 end
+disp(['Cell tracks to watch simultaneously: ' num2str(handles.counter) ]);
 set(handles.InputTrackID_toLocateOnImage,'String','');
 handles.validtrack = handles.tracktoplot;
 guidata(hObject, handles);
