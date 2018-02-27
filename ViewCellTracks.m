@@ -118,7 +118,7 @@ for k=1:toview
  lastT(k) =  max(nonzeros(xyt_curr(k).fulltrack(:,3)));
 if (firstT(k)<=handles.currT) && (handles.currT<=lastT(k)) % if this track has an XY at this time point
 hplot2 = plot(xyt_curr(k).fulltrack(firstT(k)+1:end-1,1),xyt_curr(k).fulltrack(firstT(k)+1:end-1,2)...
-    ,'*','Color',colormap(handles.trackcolor(k),:),'MarkerSize',3,'LineWidth',1);hold on
+    ,'-*','Color',colormap(handles.trackcolor(k),:),'MarkerSize',3,'LineWidth',1);hold on
 plot(xyt_curr(k).fulltrack(firstT(k),1),xyt_curr(k).fulltrack(firstT(k),2)...
     ,'p','MarkerFaceColor','r','MarkerEdgeColor','w','MarkerSize',6,'LineWidth',1);hold on
 text(xyt_curr(k).fulltrack(firstT(k),1)+8,xyt_curr(k).fulltrack(firstT(k),2)+5,'Start','Color','r','FontSize',8);hold on
@@ -392,7 +392,6 @@ for k=1:toview
  firstT(k)= min(nonzeros(xyt_curr(k).fulltrack(:,3)));
  lastT(k) =  max(nonzeros(xyt_curr(k).fulltrack(:,3)));
 if  (firstT(k)<=handles.currT) && (handles.currT<=lastT(k))% if this track has an XY at this time point
-    disp('met condition')
 hplot2 = plot(xyt_curr(k).fulltrack(handles.currT,1),xyt_curr(k).fulltrack(handles.currT,2)...
     ,'p','MarkerFaceColor',colormap(handles.trackcolor(k),:),'MarkerEdgeColor',colormap(handles.trackcolor(k),:),'MarkerSize',5,'LineWidth',1);hold on
 text(xyt_curr(k).fulltrack(handles.currT,1)+5,xyt_curr(k).fulltrack(handles.currT,2)+5,num2str(handles.tracktoplot(k)),'Color',colormap(handles.trackcolor(k),:),'FontSize',12);hold on
@@ -416,7 +415,7 @@ for k=1:toview
  lastT(k) =  max(nonzeros(xyt_curr(k).fulltrack(:,3)));
 if  (firstT(k)<=handles.currT) && (handles.currT<=lastT(k)) % if this track has an XY at this time point
 hplot2 = plot(xyt_curr(k).fulltrack(firstT(k)+1:end-1,1),xyt_curr(k).fulltrack(firstT(k)+1:end-1,2)...
-    ,'*','Color',colormap(handles.trackcolor(k),:),'MarkerSize',3,'LineWidth',1);hold on
+    ,'-*','Color',colormap(handles.trackcolor(k),:),'MarkerSize',3,'LineWidth',1);hold on
 plot(xyt_curr(k).fulltrack(firstT(k),1),xyt_curr(k).fulltrack(firstT(k),2)...
     ,'p','MarkerFaceColor','r','MarkerEdgeColor','w','MarkerSize',6,'LineWidth',1);hold on
 text(xyt_curr(k).fulltrack(firstT(k),1)+8,xyt_curr(k).fulltrack(firstT(k),2)+5,'Start','Color','r','FontSize',8);hold on
