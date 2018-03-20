@@ -283,7 +283,7 @@ multi_img(:,:,jj) = (proj{1}{jj});
 end
 
 function UpdateImage(handles,time)
-displayedImg=imshow(handles.allprojections(:,:,time),[500 3000],'Parent',handles.axes1);hold on
+displayedImg=imshow(handles.allprojections(:,:,time),[500 3000],'Parent',handles.axes1);%hold on
 set(displayedImg, 'ButtonDownFcn', @(src, evnt)IDclickedcell(src, evnt, handles));% @(src, evnt)IDclickedcell(src, evnt, handles)
 
 function [coordintime] = extracktIlastikTracks(handles)
@@ -319,6 +319,7 @@ function ClearButton_Callback(hObject, eventdata, handles)
 % hObject    handle to ClearButton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
 handles.counter = 0;
 handles.quantifyselected = [];
 handles.displayedFluorData = [];
@@ -543,6 +544,7 @@ if handles.counter ==2 && (handles.tracktoplot(handles.counter) == handles.track
   handles.clickedcellID = [];
   handles.clickedcellY = [];
   handles.clickedcellX = [];
+  handles.currT = int32(get(handles.slider1, 'Value'));
   UpdateImage(handles,handles.currT); 
  
 end
@@ -553,7 +555,8 @@ if (handles.counter > 2) && (handles.tracktoplot(handles.counter) == handles.tra
       handles.trackcolor=handles.trackcolor(1:handles.counter);  
   handles.clickedcellID = handles.clickedcellID(1:(handles.counter));
   handles.clickedcellX = handles.clickedcellX(1:(handles.counter));
-  handles.clickedcellY=  handles.clickedcellY(1:(handles.counter));    
+  handles.clickedcellY=  handles.clickedcellY(1:(handles.counter)); 
+  handles.currT = int32(get(handles.slider1, 'Value'));
   UpdateImage(handles,handles.currT); 
   
 end
@@ -565,13 +568,15 @@ if (handles.counter > 2) && any(handles.tracktoplot(handles.counter) == (handles
    handles.trackcolor= handles.trackcolor(c);  
   handles.clickedcellID = handles.clickedcellID(c);
   handles.clickedcellX = handles.clickedcellX(c);
-  handles.clickedcellY=  handles.clickedcellY(c);    
+  handles.clickedcellY=  handles.clickedcellY(c);
+  handles.currT = int32(get(handles.slider1, 'Value'));
   UpdateImage(handles,handles.currT);
   
 end
 fluor_selectedtracks = struct;
 handles.quantifyselected = [];
 % tdata.String = [];
+handles.currT = int32(get(handles.slider1, 'Value'));
 UpdateImage(handles,handles.currT);
 for jj=1:handles.counter%size(handles.tracktoplot,2)  
 hdata  = plot(handles.clickedcellX(jj),handles.clickedcellY(jj)...
