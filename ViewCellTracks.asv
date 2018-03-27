@@ -82,12 +82,10 @@ function slider1_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 handles.currT = int32(get(handles.slider1, 'Value'));%
-
 if isempty(handles.tracktoplot) || isempty(handles.tracks)
 hold on;UpdateImage(handles,handles.currT);
 title(['Current time point  ' num2str((double(handles.currT)*handles.delta_t)/60)  ...
     'hrs since start; Frame(' num2str(handles.currT) ')']);hold on
-
 else
 
 xyt = handles.tracks;    
@@ -164,7 +162,7 @@ end
 title(['Current time point  ' num2str((double(handles.currT)*handles.delta_t)/60)  ...
     'hrs since start; Frame(' num2str(handles.currT) ')']);hold on
 end
-
+end
 % do if the checkbox was selected and the matfile is loaded;
 if ~isempty(handles.matfile) && (handles.show_qFluorData==1)
     handles.PlotFluorData_SelectedCells.Visible = 'On';
@@ -182,7 +180,7 @@ if ~isempty(handles.matfile) && (handles.show_qFluorData==1)
         end              
     end    
 end
-end
+
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -487,10 +485,10 @@ if ~isempty(handles.matfile) && (handles.show_qFluorData==1)
     fluor_selectedtracks(jj).xy = cat(1,handles.quantifyselected(jj).selected.dat.xy);
     fluor_selectedtracks(jj).trackID =handles.quantifyselected(jj).selected.dat(1).track;
     end
-    save(fname,'goodtracks','fluor_selectedtracks','tp');disp('Saved selected trackIDs and their fluorescence quantification to file');
+    save(fname,'goodtracks','fluor_selectedtracks');disp('Saved selected trackIDs and their fluorescence quantification to file');
 else
     save(fname,'goodtracks');
-    disp('Saved selected trackIDs to file','tp');
+    disp('Saved selected trackIDs to file');
 end
 end
 
@@ -546,14 +544,11 @@ handles.currT = int32(get(handles.slider1, 'Value'));
 
 % store the xy for when no tracked data is used, only the fluor
 % find the trackID of the clicked cell 
-
+handles.ShowFullTrack.Visible = 'On';
+set(handles.ShowFullTrack,'String','ShowFullTrack');
+set(handles.ShowTrackIDs,'String','ShowTrackIDs');
 handles.counter = handles.counter+1;% any tme a new track is input, the counter is incremented    
 if ~isempty(handles.tracks)
-handles.InputTrackID_toLocateOnImage.Visible = 'on';
-handles.ShowFullTrack.Visible = 'On';
-handles.ShowTrackIDs.Visible = 'On';
-set(handles.ShowFullTrack,'String','ShowFullTrack');
-set(handles.ShowTrackIDs,'String','ShowTrackIDs');    
 xyt = handles.tracks;
 allIDdata = [];
 handles.currT = int32(get(handles.slider1, 'Value'));
@@ -684,6 +679,13 @@ if ~isempty(handles.tracks)
             handles.quantifyselected(jj).selected= fluor_selectedtracks(jj);
         end
     end
+%      if ~isempty(handles.matfile) && (handles.show_qFluorData == 1)
+%     handles.PlotFluorData_SelectedCells.Visible = 'On';
+%      if isempty(handles.displayedFluorData)
+%     handles.YlabelString.Visible = 'on';
+%     set(handles.YlabelString,'String','PlotFluor Y label');
+%     end
+% end 
 else
     for jj=1: handles.counter%size(handles.tracktoplot,2)
         hdata  = plot(handles.clickedX_notrackinfo(jj),handles.clickedY_notrackinfo(jj)...
@@ -695,7 +697,7 @@ else
         if ~isempty(handles.matfile) && (handles.show_qFluorData == 1)
             % the function below will get the fluoresence quantification data for each
             % clicked cell for all time points availabe in the .mat file
-            [fluor_dat]=getfluordata(handles,handles.RandomcellID(jj));%
+            [fluor_dat]=getfluordata(handles,handles.RandomcellID(jj))%
             % need then to store it in handles and use it at slider motion if the .mat
             % file is loaded
             fluor_selectedtracks(jj).dat=fluor_dat;
@@ -785,6 +787,7 @@ bg = positions(handles.pos).timeTraces.background;%
         if ~isempty(positions(jj).cellData) 
             [~,c3]=find(handles.RandomcellID == readinput);
             tomatch(ii).xy = cat(2,handles.clickedX_notrackinfo(c3),handles.clickedY_notrackinfo(c3));
+            disp(['qFluor cell with xy :' num2str(tomatch(ii).xy) ])% find the clicked cell among the fluorQ data (it has no
             % trackID, so need to find the closest cell to the clicked cell at given time point)
             allcells_givenT = positions(jj).cellData(ii).XY;
             closestcell_tmp= ipdm(tomatch(ii).xy,allcells_givenT, 'Subset', 'NearestNeighbor', 'Result', 'Structure');
@@ -795,8 +798,6 @@ bg = positions(handles.pos).timeTraces.background;%
             closestcell(ii).xy = allcells_givenT(closestcell_tmp.columnindex,:);% these are the coordinates from the .mat file, not tracking
             closestcell(ii).distance = closestcell_tmp.distance;
             closestcell(ii).track = readinput;
-           % disp(['Centroid found in qFluor data at d =  :' num2str(closestcell_tmp.distance) 'pxls from clicked spot' ])% find the clicked cell among the fluorQ data (it has no
-            
         end
      end 
     end
