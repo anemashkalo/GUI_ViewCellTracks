@@ -82,13 +82,21 @@ function slider1_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 handles.currT = int32(get(handles.slider1, 'Value'));%
-
+if isempty(handles.tracks)
+    handles.counter = 0;
+    handles.clickedX_notrackinfo=[];
+    handles.clickedY_notrackinfo=[];
+    handles.RandomcellID=[];
+    handles.tracktoplot=[];
+    handles.validtrack=[];
+    handles.trackcolor = [];
+end
 if isempty(handles.tracktoplot) || isempty(handles.tracks)
 hold on;UpdateImage(handles,handles.currT);
 title(['Current time point  ' num2str((double(handles.currT)*handles.delta_t)/60)  ...
     'hrs since start; Frame(' num2str(handles.currT) ')']);hold on
-
 else
+    
 
 xyt = handles.tracks;    
 handles.currT = int32(get(handles.slider1, 'Value'));%
@@ -232,6 +240,7 @@ set(handles.slider1, 'SliderStep', [1 / (size(handles.allprojections,3)) ,...
     10 / (size(handles.allprojections,3)) ]);%
 %here make the loadtracks button visible
 handles.loadtrackingdata.Visible = 'On';
+handles.counter= 0; % to increment the number of chosen cells to track
 % if want to look at fluor data but no tracking data
 handles.loadMatfile.Visible = 'On';
 handles.qFluorescenceCheckBox.Visible = 'On';
@@ -273,7 +282,7 @@ set(handles.ShowTrackIDs,'String','ShowTrackIDs');
 set(handles.DisplayTotalTracksField,'String',num2str(handles.total_tracks));
 handles.TotalTracksStaticText.Visible = 'On';
 handles.ClearButton.Visible = 'On';
-handles.counter= 0; % to increment the number of chosen cells to track
+% handles.counter= 0; % to increment the number of chosen cells to track
 % show the first frame of the movie
 UpdateImage(handles,1);hold on
 disp('DONE');
@@ -346,8 +355,15 @@ handles.trackcolor = [];
 handles.clickedcellID=[];
 handles.clickedcellX=[];
 handles.clickedcellY=[];
+% when there's no tracking data, the qFluor stays checked
+if isempty(handles.tracks)
+  set(handles.qFluorescenceCheckBox,'Value',1);
+  handles.show_qFluorData = 1;
+else
 set(handles.qFluorescenceCheckBox,'Value',0);
-handles.show_qFluorData_State = 1;
+handles.show_qFluorData_State = 1;   
+end
+
 handles.SaveTrackIDs.Visible = 'Off';
 handles.ResetImageSize.Visible = 'on';
 handles.PlotFluorData_SelectedCells.Visible = 'Off';
@@ -474,9 +490,9 @@ end
 else % if no tracking data was used
     tp = handles.currT;
     if platf == 1
-    fname = [num2str(handles.dir) '\SelectedCellsData_randomIDs_f' num2str(handles.pos-1) '_chan_w000' num2str(handles.chan-1)  '.mat' ];
+    fname = [num2str(handles.dir) '\SelectedCellsData_randomIDs_f' num2str(handles.pos-1) '_chan_w000' num2str(handles.chan-1) '_tp' num2str((tp*handles.delta_t)/60)  'hrs.mat' ];
 else
-    fname = [num2str(handles.dir) '/SelectedTrackIDsData_randomIDs_f' num2str(handles.pos-1) '_chan_w000' num2str(handles.chan-1) '.mat' ];
+    fname = [num2str(handles.dir) '/SelectedTrackIDsData_randomIDs_f' num2str(handles.pos-1) '_chan_w000' num2str(handles.chan-1) '_tp' num2str((tp*handles.delta_t)/60)  'hrs.mat' ];
 end
 % only the clicked cells are quntified and only
 % they will be saved (no manual input of trackIDs to save)
@@ -486,6 +502,7 @@ if ~isempty(handles.matfile) && (handles.show_qFluorData==1)
     fluor_selectedtracks(jj).fluor = cat(1,handles.quantifyselected(jj).selected.dat.fluor); %handles.quantifyselected(jj).selected.dat
     fluor_selectedtracks(jj).xy = cat(1,handles.quantifyselected(jj).selected.dat.xy);
     fluor_selectedtracks(jj).trackID =handles.quantifyselected(jj).selected.dat(1).track;
+    fluor_selectedtracks(jj).tp =double(cat(1,handles.quantifyselected(jj).selected.dat.tp));
     end
     save(fname,'goodtracks','fluor_selectedtracks','tp');disp('Saved selected trackIDs and their fluorescence quantification to file');
 else
@@ -627,39 +644,7 @@ handles.RandomcellID(handles.counter) = handles.tracktoplot(handles.counter);
 handles.clickedX_notrackinfo(handles.counter) = round(xy(1));
 handles.clickedY_notrackinfo(handles.counter) = round(xy(2));
 disp(num2str(handles.tracktoplot(handles.counter)));
-if handles.counter ==2 && (handles.tracktoplot(handles.counter) == handles.tracktoplot(handles.counter-1))
-  handles.counter = 0;
-  handles.tracktoplot = [];
-  handles.trackcolor = [];  
-  handles.RandomcellID=[];
-  handles.clickedX_notrackinfo = [];
-  handles.clickedY_notrackinfo = [];
-  UpdateImage(handles,handles.currT); 
- 
-end
-% here if the same cell was clicekd again (consecutively), make the cell label dissapear; 
-if (handles.counter > 2) && (handles.tracktoplot(handles.counter) == handles.tracktoplot(handles.counter-1))
-  handles.counter = handles.counter-2;
-  handles.tracktoplot = (handles.tracktoplot(1:end-2));
-  handles.trackcolor=handles.trackcolor(1:handles.counter);  
-  handles.RandomcellID = handles.RandomcellID(1:(handles.counter));
-  handles.clickedX_notrackinfo = handles.clickedX_notrackinfo(1:(handles.counter));
-  handles.clickedY_notrackinfo = handles.clickedY_notrackinfo(1:(handles.counter));
-  UpdateImage(handles,handles.currT); 
-end
-  % if the cell was unclicked later on,after selecting some more cells
-if (handles.counter > 2) && any(handles.tracktoplot(handles.counter) == (handles.tracktoplot(1:handles.counter-1)))
- % if there's no tracking data
-  [~,c1]=find(handles.clickedX_notrackinfo(handles.counter) ~= handles.clickedX_notrackinfo);% any trackIDs that don't match the clicked one
-  handles.counter = handles.counter-2;
-  handles.tracktoplot = handles.tracktoplot(c1);  
-  handles.trackcolor= handles.trackcolor(c1);  
-  handles.RandomcellID = handles.RandomcellID(c1);
-  handles.clickedX_notrackinfo = handles.clickedX_notrackinfo(c1);
-  handles.clickedY_notrackinfo = handles.clickedY_notrackinfo(c1);
-  UpdateImage(handles,handles.currT);
 
-end
 end
 %----------------------
 fluor_selectedtracks = struct;
@@ -682,6 +667,7 @@ if ~isempty(handles.tracks)
             % file is loaded
             fluor_selectedtracks(jj).dat=fluor_dat;
             handles.quantifyselected(jj).selected= fluor_selectedtracks(jj);
+            
         end
     end
 else
@@ -690,20 +676,25 @@ else
             ,'p','MarkerFaceColor',colormap(handles.trackcolor(jj),:),'MarkerEdgeColor',colormap(handles.trackcolor(jj),:),'MarkerSize',5,'LineWidth',1);hold on
         
         tdata = text(handles.clickedX_notrackinfo(jj)+5,handles.clickedY_notrackinfo(jj)+5,...
-            num2str(handles.RandomcellID(jj)),'FontSize',12,'Color',colormap(handles.trackcolor(jj),:));
-        
+            num2str(handles.RandomcellID(jj)),'FontSize',12,'Color',colormap(handles.trackcolor(jj),:));hold on
+       % when there's no tracking data, the qFluor stays checked
+     
         if ~isempty(handles.matfile) && (handles.show_qFluorData == 1)
             % the function below will get the fluoresence quantification data for each
             % clicked cell for all time points availabe in the .mat file
-            [fluor_dat]=getfluordata(handles,handles.RandomcellID(jj));%
+            [fluor_dat]=getfluordata(handles,handles.RandomcellID(jj));  %jj
             % need then to store it in handles and use it at slider motion if the .mat
             % file is loaded
-            fluor_selectedtracks(jj).dat=fluor_dat;
-            handles.quantifyselected(jj).selected= fluor_selectedtracks(jj);
+            fluor_selectedtracks(jj).dat=fluor_dat;%jj
+            handles.quantifyselected(jj).selected= fluor_selectedtracks(jj);%jj
+            % plot the coordinates of the actual cell that was matched to
+            % clicked cell in the fluor matfile
+            hdata  = plot(handles.quantifyselected(jj).selected.dat(end).xy(1),handles.quantifyselected(jj).selected.dat(end).xy(2)...
+            ,'p','MarkerFaceColor','r','MarkerEdgeColor','k','MarkerSize',5,'LineWidth',1);hold on
         end
         
-        
-    end
+    end      
+    
    
 end
 if ~isempty(handles.matfile) && (handles.show_qFluorData == 1)
@@ -735,6 +726,11 @@ tracks = StructDlg(tracks);
 handles.matfile = fullfile(pathname_mat,tracks.fluorquantified);% the output .mat file of the Idse's analysis code, with the 'positions' containing all the data
 handles.quantifyselected = [];
 fluor_selectedtracks = struct;
+if isempty(handles.tracks)    
+set(handles.qFluorescenceCheckBox,'Value',1);
+handles.show_qFluorData = 1;
+handles.displayedFluorData = [];
+end
 disp('Done');
 guidata(hObject, handles);
 
@@ -795,6 +791,7 @@ bg = positions(handles.pos).timeTraces.background;%
             closestcell(ii).xy = allcells_givenT(closestcell_tmp.columnindex,:);% these are the coordinates from the .mat file, not tracking
             closestcell(ii).distance = closestcell_tmp.distance;
             closestcell(ii).track = readinput;
+            closestcell(ii).tp = handles.currT;
            % disp(['Centroid found in qFluor data at d =  :' num2str(closestcell_tmp.distance) 'pxls from clicked spot' ])% find the clicked cell among the fluorQ data (it has no
             
         end
@@ -841,6 +838,7 @@ end
 %color
 legendstr = cell(size(handles.quantifyselected,2),1);
 symbolstring = {'x','p','d','o','s','*','x','p','d','o','s','*'};%
+if ~isempty(handles.tracks)
 if size(symbolstring,2)<size(handles.quantifyselected,2)
     disp('Plotting all data using the same marker')
     for x=1:size(handles.quantifyselected,2)        
@@ -864,25 +862,55 @@ for x=1:size(handles.quantifyselected,2)
  legendstr{x} = num2str(handles.tracktoplot(x));
 end
 end
+else
+    handles.currT = int32(get(handles.slider1, 'Value'));
+    if size(symbolstring,2)<size(handles.quantifyselected,2)
+    disp('Plotting all data using the same marker')
+    for x=1:size(handles.quantifyselected,2)        
+        fluorallt(x).intensity= cat(1,handles.quantifyselected(x).selected.dat.fluor);
+        fluorallt(x).coord = round(cat(1,handles.quantifyselected(x).selected.dat.xy));
+        figure(1),plot(double(handles.currT),fluorallt(x).intensity,'Color',...
+            colormap(handles.trackcolor(x),:),'LineWidth',1);hold on; box on
+        limitsX(x) = size(fluorallt(x).intensity,1);
+        limitsY(x) = max(fluorallt(x).intensity);
+        legendstr{x} = num2str(handles.tracktoplot(x));
+    end
+else
+for x=1:size(handles.quantifyselected,2)
+    
+ fluorallt(x).intensity= cat(1,handles.quantifyselected(x).selected.dat.fluor);
+ fluorallt(x).coord = round(cat(1,handles.quantifyselected(x).selected.dat.xy));
+ figure(1),plot(double(handles.currT),fluorallt(x).intensity,'Color',...
+     colormap(handles.trackcolor(x),:),'Marker',symbolstring{x},'LineWidth',2);hold on; box on 
+ limitsX(x) = size(fluorallt(x).intensity,1);
+ limitsY(x) = max(fluorallt(x).intensity);
+ legendstr{x} = num2str(handles.tracktoplot(x));
+end
+end
+end
 f = figure(1);
-if isfinite(max(limitsY)) && isfinite(max(limitsX))
+if ~isempty(handles.tracks)
+title('Selected cells only, Legend: trackIDs from Ilastik');
+legend(legendstr,'Location','NorthWest');
+if isfinite(max(limitsY)) && isfinite(max(limitsX)) 
 ylim([0 (max(limitsY)+1)]);
 xlim([0 (max(limitsX)+1)]);
 f.CurrentAxes.XTick = 1:9:max(limitsX);
 f.CurrentAxes.XTickLabel = (1:9:max(limitsX))*handles.delta_t/60;
 else
-    disp('One of the data points is NaN')
+    disp('One of the data points is NaN')    
+end
+else
+  ylim([0 (max(limitsY)+1)]);
+  xlim([0 handles.szt+1]);
+  f.CurrentAxes.XTick = 1:20:handles.szt;
+  f.CurrentAxes.XTickLabel = (1:20:handles.szt)*handles.delta_t/60;  
+  title('Selected cells only, no tracking data ');
 end
 f.CurrentAxes.FontSize = 12;
 f.CurrentAxes.LineWidth = 2;
 xlabel('Time, hrs');    
 ylabel(handles.displayedFluorData);
-if ~isempty(handles.tracks)
-title('Selected cells only, Legend: trackIDs from Ilastik');
-else
-  title('Selected cells only, Legend: random trackIDs ');
-end  
-legend(legendstr,'Location','NorthWest');
 end
 guidata(hObject, handles);
 
