@@ -82,15 +82,37 @@ function slider1_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 handles.currT = int32(get(handles.slider1, 'Value'));%
+%if isempty(handles.tracks) && (handles.plotpressed == 1)
+% handles.counter = 0;
+%     handles.clickedX_notrackinfo=[];
+%     handles.clickedY_notrackinfo=[];
+%     handles.RandomcellID=[];
+%     handles.tracktoplot=[];
+%     handles.validtrack=[];
+%     handles.trackcolor = [];
+%     handles.tp_notrackingdata=[];
+% plot the coordinates of the actual cell that was matched to
+            % clicked cell in the fluor matfile
+            % plot only the cells that were selected for that time point
+            % previously
+%             [~,c4]=find(handles.tp_notrackingdata == double(handles.currT));
+%             for kk=1:size(c4,2)
+%             hdata  = plot(handles.quantifyselected(c4(kk)).selected.dat(end).xy(1),handles.quantifyselected(c4(kk)).selected.dat(end).xy(2)...
+%             ,'p','MarkerFaceColor','r','MarkerEdgeColor','k','MarkerSize',5,'LineWidth',1);hold on
+%             end
+%end
 
 if isempty(handles.tracktoplot) || isempty(handles.tracks)
 hold on;UpdateImage(handles,handles.currT);
 title(['Current time point  ' num2str((double(handles.currT)*handles.delta_t)/60)  ...
     'hrs since start; Frame(' num2str(handles.currT) ')']);hold on
 else
+    
+
 xyt = handles.tracks;    
 handles.currT = int32(get(handles.slider1, 'Value'));%
 showfulltrackbutton = get(handles.ShowFullTrack,'String');
+
 showtrackIDsbutton = get(handles.ShowTrackIDs,'String');
 if showtrackIDsbutton(1) == 'H' % if the button was not depressed before clicking the slider
 handles.ShowTrackIDsState = handles.ShowTrackIDsState+1;
@@ -480,11 +502,12 @@ else
     save(fname,'goodtracks');
     disp('Saved selected trackIDs to file');
 end
-else % if no tracking data was used    
+else % if no tracking data was used
+    tp = handles.currT;
     if platf == 1
-    fname = [num2str(handles.dir) '\SelectedCellsData_randomTrackIDs_f' num2str(handles.pos-1) '_chan_w000' num2str(handles.chan-1) '.mat' ];
+    fname = [num2str(handles.dir) '\SelectedCellsData_randomIDs_f' num2str(handles.pos-1) '_chan_w000' num2str(handles.chan-1) '_tp' num2str((tp*handles.delta_t)/60)  'hrs.mat' ];
 else
-    fname = [num2str(handles.dir) '/SelectedTrackIDsData_randomTrackIDs_f' num2str(handles.pos-1) '_chan_w000' num2str(handles.chan-1) '.mat' ];
+    fname = [num2str(handles.dir) '/SelectedTrackIDsData_randomIDs_f' num2str(handles.pos-1) '_chan_w000' num2str(handles.chan-1) '_tp' num2str((tp*handles.delta_t)/60)  'hrs.mat' ];
 end
 % only the clicked cells are quntified and only
 % they will be saved (no manual input of trackIDs to save)
@@ -496,7 +519,10 @@ if ~isempty(handles.matfile) && (handles.show_qFluorData==1)
     fluor_selectedtracks(jj).trackID =cat(1,handles.quantifyselected(jj).selected.dat.track);
     fluor_selectedtracks(jj).tp =cat(1,handles.quantifyselected(jj).selected.dat.tp);
     end
-    save(fname,'fluor_selectedtracks');disp('Saved selected trackIDs and their fluorescence quantification to file');
+    save(fname,'goodtracks','fluor_selectedtracks','tp');disp('Saved selected trackIDs and their fluorescence quantification to file');
+else
+    save(fname,'goodtracks');
+    disp('Saved selected trackIDs to file','tp');
 end
 end
 
@@ -667,17 +693,15 @@ else
             ,'p','MarkerFaceColor',colormap(handles.trackcolor(c4(jj)),:),'MarkerEdgeColor',colormap(handles.trackcolor(c4(jj)),:),'MarkerSize',5,'LineWidth',1);hold on
                 tdata = text(handles.clickedX_notrackinfo(c4(jj))+5,handles.clickedY_notrackinfo(c4(jj))+5,...
             num2str(handles.RandomcellID(c4(jj))),'FontSize',12,'Color',colormap(handles.trackcolor(c4(jj)),:));hold on
-       % this will find the best match to the clicked centroid in the mat
-       % file
+       % when there's no tracking data, the qFluor stays checked
       
-        
-    end
-    [xy_centroid]=find_cellinmatfile(handles.clickedX_notrackinfo(end),handles.clickedY_notrackinfo(end),handles);
 %             % plot the coordinates of the actual cell that was matched to
 %             % clicked cell in the fluor matfile
-            hdata  = plot(round(xy_centroid(1)),round(xy_centroid(2))...
-            ,'p','MarkerFaceColor','r','MarkerEdgeColor','k','MarkerSize',5,'LineWidth',1);hold on
-
+%             hdata  = plot(handles.quantifyselected(jj).selected.dat(end).xy(1),handles.quantifyselected(jj).selected.dat(end).xy(2)...
+%             ,'p','MarkerFaceColor','r','MarkerEdgeColor','k','MarkerSize',5,'LineWidth',1);hold on
+%         end
+        
+    end      
     
    
 end
@@ -839,7 +863,8 @@ if size(symbolstring,2)<size(handles.quantifyselected,2)
         legendstr{x} = num2str(handles.tracktoplot(x));
     end
 else
-for x=1:size(handles.quantifyselected,2)    
+for x=1:size(handles.quantifyselected,2)
+    
  fluorallt(x).intensity= cat(1,handles.quantifyselected(x).selected.dat.fluor);
  fluorallt(x).coord = round(cat(1,handles.quantifyselected(x).selected.dat.xy));
  figure(1),plot(fluorallt(x).intensity,'Color',...
@@ -875,15 +900,18 @@ end
  new_t = fluorallt.selectedtimes(isfinite(fluorallt.intensity));
  new_I =fluorallt.intensity(isfinite(fluorallt.intensity));
  new_c =colormap(handles.trackcolor(isfinite(fluorallt.intensity)),:);
+ %finiteinfo = handles.tracktoplot(isfinite(fluorallt.intensity));
  legendstr = cell(1,newsz)  ;
   for w=1:newsz
  figure(1),plot(new_t(w),new_I(w),'Color',...
      new_c(w,:),'Marker','p','LineWidth',2);hold on; box on 
+ %legendstr{w} = num2str(finiteinfo(w));
   end
  limitsX = size(new_I,1);
  limitsY = max(new_I); 
 else
 
+  
  fluorallt.intensity= cat(1,handles.quantifyselected(1).selected.dat.fluor);
  fluorallt.coord = round(cat(1,handles.quantifyselected(1).selected.dat.xy));
  fluorallt.selectedtimes = round(cat(1,handles.quantifyselected(1).selected.dat.tp));
@@ -891,12 +919,13 @@ else
  new_t = fluorallt.selectedtimes(isfinite(fluorallt.intensity));
  new_I =fluorallt.intensity(isfinite(fluorallt.intensity));
  new_c =colormap(handles.trackcolor(isfinite(fluorallt.intensity)),:);
+ %finiteinfo = handles.tracktoplot(isfinite(fluorallt.intensity));
  legendstr = cell(1,newsz)  ;
   for w=1:newsz
  figure(1),plot(new_t(w),new_I(w),'Color',...
      new_c(w,:),'Marker',symbolstring{w},'LineWidth',2);hold on; box on 
+ %legendstr{w} = num2str(finiteinfo(w));
   end
- % figure(1), errorbar()
  limitsX = size(new_I,1);
  limitsY = max(new_I); 
  
@@ -907,7 +936,7 @@ if ~isempty(handles.tracks)
 title('Selected cells only, Legend: trackIDs from Ilastik');
 legend(legendstr,'Location','NorthWest');
 if isfinite(max(limitsY)) && isfinite(max(limitsX)) 
-ylim([0 (max(limitsY)+0.5)]);
+ylim([0 (max(limitsY)+1)]);
 xlim([0 (max(limitsX)+1)]);
 f.CurrentAxes.XTick = 1:9:max(limitsX);
 f.CurrentAxes.XTickLabel = (1:9:max(limitsX))*handles.delta_t/60;
@@ -915,10 +944,10 @@ else
     disp('One of the data points is NaN')    
 end
 else
-  ylim([0 (max(limitsY)+0.5)]);
+  ylim([0 (max(limitsY)+1)]);
   xlim([0 handles.szt+1]);
-  f.CurrentAxes.XTick = 1:17:handles.szt;
-  f.CurrentAxes.XTickLabel = (1:17:handles.szt)*handles.delta_t/60;  
+  f.CurrentAxes.XTick = 1:20:handles.szt;
+  f.CurrentAxes.XTickLabel = (1:20:handles.szt)*handles.delta_t/60;  
   title('Selected cells only, no tracking data ');
 end
 f.CurrentAxes.FontSize = 12;
@@ -1049,23 +1078,3 @@ function ResetImageSize_Callback(hObject, eventdata, handles)
 handles.axes1.XLim = [0.5000 1.0245e+03];
 handles.axes1.YLim =  [0.5000 1.0245e+03];
 guidata(hObject, handles);
-
-function [xy_centroid]=find_cellinmatfile(x,y,handles)
-load(handles.matfile);
-jj = handles.pos;
-closestcell_tmp=[];
-closestcell = struct;
-tpts = double(handles.currT);% 
-tomatch = struct;
-     for ii=tpts% current time point;         
-        if ~isempty(positions(jj).cellData) 
-            tomatch.xy = cat(2,x,y);
-            allcells_givenT = positions(jj).cellData(ii).XY;
-            closestcell_tmp= ipdm(tomatch.xy,allcells_givenT, 'Subset', 'NearestNeighbor', 'Result', 'Structure');
-            closestcell.xy = allcells_givenT(closestcell_tmp.columnindex,:);% these are the coordinates from the .mat file, not tracking
-            closestcell.distance = closestcell_tmp.distance;
-          %  disp(['Centroid found in qFluor data at d =  :' num2str(closestcell_tmp.distance) 'pxls from clicked spot' ])% find the clicked cell among the fluorQ data (it has no
-     end
-     end 
-     xy_centroid = closestcell.xy;
-
