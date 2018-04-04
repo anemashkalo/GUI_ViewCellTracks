@@ -659,6 +659,8 @@ if ~isempty(handles.tracks)
             
         end
     end
+     disp(['Cell tracks to watch simultaneously: ' num2str(handles.counter) ]);
+
 else
      % only plot markers for the slider time point
         [~,c4]=find(handles.tp_notrackingdata == double(handles.currT));        
@@ -679,7 +681,8 @@ else
             ,'p','MarkerFaceColor','r','MarkerEdgeColor','k','MarkerSize',5,'LineWidth',1);hold on
 
     
-   
+ disp(['Total cells selected: ' num2str(handles.counter) ]);
+  
 end
 if ~isempty(handles.matfile) && (handles.show_qFluorData == 1)
     handles.PlotFluorData_SelectedCells.Visible = 'On';
@@ -689,7 +692,6 @@ if ~isempty(handles.matfile) && (handles.show_qFluorData == 1)
     end
 end 
 
-disp(['Cell tracks to watch simultaneously: ' num2str(handles.counter) ]);
 %handles.validtrack = handles.clickedcellID;
 handles.validtrack = handles.tracktoplot;
 handles.SaveTrackIDs.Visible = 'On';
