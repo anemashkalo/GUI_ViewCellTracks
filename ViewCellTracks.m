@@ -362,7 +362,7 @@ handles.ResetImageSize.Visible = 'on';
 handles.PlotFluorData_SelectedCells.Visible = 'Off';
 handles.YlabelString.Visible = 'off';
 set(handles.YlabelString,'String','PlotFluor Ylabel');
-handles.InputTrackID_toLocateOnImage.Visible = 'off';
+handles.InputTrackID_toLocateOnImage.Visible = 'on';
 set(handles.InputTrackID_toLocateOnImage,'String','LocateTrackID');
 handles.ShowTrackIDs.Visible = 'off';
 set(handles.ShowTrackIDs,'String','ShowTrackIDs');
